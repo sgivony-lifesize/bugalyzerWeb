@@ -1,24 +1,139 @@
-.App {
+.canvas {
+  padding: 30px;
+  font-family: Arial;
+  float: left;
+  width: 100%;
+}
+#caller {
+  display: CALLER_DISPLAY;
+}
+#link1 {
+  display: LINK1_DISPLAY;
+}
+#node1 {
+  display: NODE1_DISPLAY;
+}
+#link2 {
+  display: LINK2_DISPLAY;
+}
+#node2 {
+  display: NODE2_DISPLAY;
+}
+#link3 {
+  display: LINK3_DISPLAY;
+}
+#callee {
+  display: CALLEE_DISPLAY;
+}
+.graph {
+  float: left;
+  padding: 10px;
+}
+.graph_6 {
+  width: 100%;
+  float: left;
+}
+.graph_3 {
+  float: left;
+}
+.entity {
+  border: 1px solid black;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  float: left;
   text-align: center;
+  background: lemonchiffon;
 }
-
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+.content {
+  padding: 10px;
 }
-
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
+.version {
+  padding-bottom: 10px;
+}
+.legs {
+  padding: 0px;
+}
+.leg {
+  border: 1px solid black;
+  border-radius: 5px;
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  background: #CCFF66;
+  padding: 5px 3%;
+  float: left;
+  text-align: center;
+  margin: 3%;
+  width: 60px;
+}
+#node1IB {
+  background: #9999FF;
+}
+#node1OB {
+  background: #CC3399;
+}
+#node2IB {
+  background: #FF9933;
+}
+#node2OB {
+  background: #00CCCC;
+}
+.link {
+  border-bottom: 1px solid black;
+  float: left;
+  font-size: 14px;
+  padding: 5px 10px;
+}
+.title {
+  border: 0px solid black;
+  border-radius-top: 5px;
+  background-color: black;
   color: white;
+  font-weight: bold;
+  padding: 5px 10px;
+  -webkit-border-radius-top: 5px;
+  -moz-border-radius-top: 5px;
+}
+.legTitle {
+  font-weight: bold;
+}
+.nodeIp {
+  font-family: monospace;
+  font-size: 10px;
+}
+.sipviewOutput {
+  white-space: pre;
+  font-family: monospace;
+  padding: 20px;
+  font-size: 12px;
 }
 
-.App-intro {
-  font-size: large;
+
+
+
+
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dashed black;
 }
 
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: auto;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+
+    position: absolute;
+    z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    font-family: monospace;
 }
