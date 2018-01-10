@@ -11,7 +11,7 @@ class App extends Component {
     this.handleSearch = this.handleSearch.bind(this);
     this.searchExtension = this.searchExtension.bind(this);
     this.state = {
-      id: 'Please Wait...',
+      id: '',
       cookie: 'Cookie',
       caller: 'caller',
       callee: 'callee',
@@ -20,9 +20,15 @@ class App extends Component {
     };
   }
 
-  searchExtension(extension) {
-    fetch('/api/id/' + extension, {
-      credentials: 'include'
+  searchExtension(userInput) {
+    this.setState({id: 'Please Wait...'});
+    fetch('/api/id/', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userInput)
     })
     .then(res => res.json())
     .then(json => this.setState({
@@ -34,18 +40,28 @@ class App extends Component {
       this.setState({render: true}) //After 1 second, set render to true
     }.bind(this), 2000)
 
-    setTimeout(function() { //Start the timer
-      fetch('/api/job/' + this.state.id + '/' + extension)
+    setTimeout(function() {
+      userInput.id = this.state.id;
+      fetch('/api/job/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userInput)
+      })
       //.then(res => console.log(res.cookie))
       .then(res => res.json())
       // .then(json => console.log(json))
       .then(json => {
+        var map = json.messages[0].map;
         this.setState({
           //job: json.messages[0].map.confid,
-          caller: json.messages[0].map.from_displayname,
-          callee: json.messages[0].map.to_displayname,
-          callerExt: json.messages[0].map.from_extension,
-          calleeExt: json.messages[0].map.to_extension,
+          caller: map.from_displayname,
+          callee: map.to_displayname,
+          callerExt: map.from_extension,
+          calleeExt: map.to_extension,
+          srcIp: map.from_ip
         });
         console.log(json);
       })
@@ -60,8 +76,13 @@ class App extends Component {
   }
 
   handleSearch(evt) {
-    var ext = ReactDOM.findDOMNode(this.refs.refExt).value;
-    this.searchExtension(ext);
+    var userInput = {
+      extension: ReactDOM.findDOMNode(this.refs.refExt).value,
+      from: ReactDOM.findDOMNode(this.refs.refTimeFrom).value,
+      to: ReactDOM.findDOMNode(this.refs.refTimeTo).value,
+      timeZone: ReactDOM.findDOMNode(this.refs.refTimeZone).value
+    }
+    this.searchExtension(userInput);
   }
 
   render() {
@@ -71,19 +92,20 @@ class App extends Component {
           <input ref="refExt" type="text"/>
           <input ref="refTimeFrom" type="text" />
           <input ref="refTimeTo" type="text" />
+          <input ref="refTimeZone" type="text" />
           <button onClick={this.handleSearch}>Search</button>
         </div>
         <div className="App">
-          <h2>Sumo Job ID: {this.state.id}</h2>
+          <h4>Sumo Job ID: {this.state.id}</h4>
           <Caller name={this.state.caller}
                   client="Lifesize Web Client"
                   extension={this.state.callerExt}
-                  ip="82.1.68.119"
+                  ip={this.state.srcIp}
           />
           <Caller name={this.state.callee}
                   client="Lifesize Web Client"
                   extension={this.state.calleeExt}
-                  ip="82.1.68.119"
+                  ip="999.888.777.666"
           />
         </div>
       </div>
