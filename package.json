@@ -6,11 +6,15 @@
     "body-parser": "^1.17.2",
     "cookie-parser": "^1.4.3",
     "debug": "~2.6.3",
+    "es6-promise": "^4.2.2",
     "express": "^4.15.3",
+    "isomorphic-fetch": "^2.2.1",
     "jade": "^1.11.0",
     "morgan": "^1.8.2",
+    "node-fetch": "^1.7.3",
     "react": "^15.6.1",
-    "react-dom": "^15.6.1"
+    "react-dom": "^15.6.1",
+    "react-sync-fetch": "^1.0.13"
   },
   "devDependencies": {
     "concurrently": "^3.5.0",
@@ -18,8 +22,7 @@
     "react-scripts": "1.0.10"
   },
   "scripts": {
-    "start":
-      "concurrently \"react-scripts start\" \"nodemon server/server.js\"",
+    "start": "concurrently \"react-scripts start\" \"nodemon server/server.js\"",
     "build": "react-scripts build && mv build server",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
