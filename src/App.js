@@ -38,13 +38,18 @@ class App extends Component {
       fetch('/api/job/' + this.state.id + '/' + extension)
       //.then(res => console.log(res.cookie))
       .then(res => res.json())
-      .then(json => this.setState({
-        //job: json.messages[0].map.confid,
-        caller: json.messages[0].map.from_displayname,
-        callee: json.messages[0].map.to_displayname,
-        callerExt: json.messages[0].map.from_extension,
-        calleeExt: json.messages[0].map.to_extension,
-      }))
+      // .then(json => console.log(json))
+      .then(json => {
+        this.setState({
+          //job: json.messages[0].map.confid,
+          caller: json.messages[0].map.from_displayname,
+          callee: json.messages[0].map.to_displayname,
+          callerExt: json.messages[0].map.from_extension,
+          calleeExt: json.messages[0].map.to_extension,
+        });
+        console.log(json);
+      })
+    //)
       .catch(err => console.log('err ' + err))
       .then(this.setState({ message: "bummer" }))
     }.bind(this), 3000)
@@ -55,16 +60,18 @@ class App extends Component {
   }
 
   handleSearch(evt) {
-    var ext = ReactDOM.findDOMNode(this.refs.extRef).value;
+    var ext = ReactDOM.findDOMNode(this.refs.refExt).value;
     this.searchExtension(ext);
   }
 
   render() {
     return (
       <div className="canvas" id="canvas1">
-        <div id="callerExtension">
-          <input ref="extRef" type="text" />
-          <button className="btn btn-primary" onClick={this.handleSearch}>Search</button>
+        <div id="userInput">
+          <input ref="refExt" type="text"/>
+          <input ref="refTimeFrom" type="text" />
+          <input ref="refTimeTo" type="text" />
+          <button onClick={this.handleSearch}>Search</button>
         </div>
         <div className="App">
           <h2>Sumo Job ID: {this.state.id}</h2>

@@ -14,7 +14,8 @@
     "node-fetch": "^1.7.3",
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
-    "react-sync-fetch": "^1.0.13"
+    "react-sync-fetch": "^1.0.13",
+    "underscore.string": "^3.3.4"
   },
   "devDependencies": {
     "concurrently": "^3.5.0",
