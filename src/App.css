@@ -62,10 +62,15 @@
   -moz-border-radius: 5px;
   background: #CCFF66;
   padding: 5px 3%;
-  float: left;
   text-align: center;
   margin: 3%;
   width: 60px;
+}
+.inboundLeg {
+  float: left;
+}
+.outboundLeg {
+  float: right;
 }
 #node1IB {
   background: #9999FF;

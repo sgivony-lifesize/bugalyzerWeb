@@ -10,28 +10,26 @@ const query2 = "{\n  \"query\": \"(_sourceCategory=prod/css/cdr ) or (_sourceCat
 
 var coo;
 
+const fetchOptions = {
+  // mode: 'cross-domain',
+  credentials: 'include',
+  redirect: 'follow',
+  headers: {
+    'authorization': 'Basic c3UxbXkycGNnNlM0dmo6azNnakNHUElVY1NtTEdON1NWc0VWcXRPbFo2U1Q1Vmo3RUJjckdINGlBdUJXOVpPV092bGk5empYSmg4Qkdsbw==',
+    'cache-control': 'no-cache',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+  },
+}
 
 router.use(bodyParser.json());
 router.post('/id', function(req, res, next) {
   console.log('/id called with extension ' + req.body.extension);
-  //res.send(req.body);
 
-//6598550
-  fetch(url, {
-      method: 'POST',
-      // mode: 'cross-domain',
-      credentials: 'include',
-      redirect: 'follow',
-      headers: {
-        'authorization': 'Basic c3UxbXkycGNnNlM0dmo6azNnakNHUElVY1NtTEdON1NWc0VWcXRPbFo2U1Q1Vmo3RUJjckdINGlBdUJXOVpPV092bGk5empYSmg4Qkdsbw==',
-        'cache-control': 'no-cache',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone)
-      // body: sprintf(query1, 6598550, '2017-12-20T10:00:00', '2017-12-20T23:00:00', 'CST')
-      // body: sprintf(query2, req.params.extension, '2018-01-10T08:30:00', '2018-01-10T08:40:15', 'CST')
-    })
+  fetchOptions.method = 'POST';
+  fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+
+  fetch(url, fetchOptions)
   // .then(r => console.log('Cookies: ' + r.headers.getAll('set-cookie')))
   .then(r => {
     coo = r.headers.getAll('set-cookie');
@@ -40,39 +38,26 @@ router.post('/id', function(req, res, next) {
   })
   .then(function(json) {
     json.cookie = coo;
+    console.log('JOB ID:  ' + json.id);
     return res.send(json);
   })
-  .then(r => r.json())
-  .then(json => console.log('ID:      ' + json.id))
   .catch(err => {
     console.log(err);
     res.json({ error: err });
   });
 });
 
-router.post('/job', function(req, res, next) {
-  console.log('/job/' + req.body.id + ' called');
-  console.log('JOB ID is ' + req.body.id);
+router.post('/query1', function(req, res, next) {
+  console.log('/query1/ called with job id ' + req.body.id);
 
+  fetchOptions.method = 'GET';
+  fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+  fetchOptions.headers.cookie = coo;
 
-  return fetch(url + req.body.id + '/messages?offset=0&limit=100', {
-      method: 'GET',
-      // mode: 'cross-domain',
-      credentials: 'include',
-      redirect: 'follow',
-      headers: {
-        'cookie': coo,
-        'authorization': 'Basic c3UxbXkycGNnNlM0dmo6azNnakNHUElVY1NtTEdON1NWc0VWcXRPbFo2U1Q1Vmo3RUJjckdINGlBdUJXOVpPV092bGk5empYSmg4Qkdsbw==',
-        'cache-control': 'no-cache',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone)
-      // body: sprintf(query2, req.params.extension, '2018-01-10T08:30:00', '2018-01-10T08:40:15', 'CST')
-    })
+  return fetch(url + req.body.id + '/messages?offset=0&limit=100', fetchOptions)
   .then(r => r.json())
   .then(json => {
-    console.log('Response: ' + json);
+    console.log('Response: ' + JSON.stringify(json.messages, null, 2));
     res.send(json);
   })
   .catch(err => {

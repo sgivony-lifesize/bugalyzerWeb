@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 //import logo from './logo.svg';
 import './App.css';
-import Caller from './Caller.js'
+import Endpoint from './Endpoint.js';
+import Node from './Node.js';
+import Link from './Link.js';
 
 var ReactDOM = require('react-dom');
 
@@ -11,17 +13,14 @@ class App extends Component {
     this.handleSearch = this.handleSearch.bind(this);
     this.searchExtension = this.searchExtension.bind(this);
     this.state = {
+      display: false,
       id: '',
       cookie: 'Cookie',
-      caller: 'caller',
-      callee: 'callee',
-      callerExt: 'callerExt',
-      calleeExt: 'calleeExt',
     };
   }
 
   searchExtension(userInput) {
-    this.setState({id: 'Please Wait...'});
+
     fetch('/api/id/', {
       method: 'POST',
       credentials: 'include',
@@ -36,13 +35,13 @@ class App extends Component {
       cookie: json.cookie
     }));
 
-    setTimeout(function() { //Start the timer
-      this.setState({render: true}) //After 1 second, set render to true
-    }.bind(this), 2000)
+    // setTimeout(function() { //Start the timer
+    //   // this.setState({render: true}) //After 1 second, set render to true
+    // }/*.bind(this), 2000*/)
 
     setTimeout(function() {
       userInput.id = this.state.id;
-      fetch('/api/job/', {
+      fetch('/api/query1/', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -50,63 +49,128 @@ class App extends Component {
         },
         body: JSON.stringify(userInput)
       })
-      //.then(res => console.log(res.cookie))
       .then(res => res.json())
-      // .then(json => console.log(json))
       .then(json => {
         var map = json.messages[0].map;
-        this.setState({
-          //job: json.messages[0].map.confid,
-          caller: map.from_displayname,
-          callee: map.to_displayname,
-          callerExt: map.from_extension,
-          calleeExt: map.to_extension,
-          srcIp: map.from_ip
-        });
         console.log(json);
+        this.setState({
+          display: true,
+          caller: {
+            name:      map.from_displayname,
+            client:    '',
+            extension: map.from_extension,
+            ip:        map.from_ip
+          },
+          link1: {
+            divId: 1,
+            callId: '-----',
+            callIdFull: '-'
+          },
+          node1: {
+            index: 1,
+            name: '-----------------------------------',
+            version: '-',
+            ipExt: '-',
+            ipInt: '-',
+            ib: '-',
+            ibFull: '-',
+            ob: '-',
+            obFull: '-'
+          },
+          link2: {
+            divId: 2,
+            callId: '-----',
+            callIdFull: '-'
+          },
+          node2: {
+            index: 2,
+            name: '-----------------------------------',
+            version: '-',
+            ipExt: '-',
+            ipInt: '-',
+            ib: '-',
+            ibFull: '-',
+            ob: '-',
+            obFull: '-'
+          },
+          link3: {
+            divId: 3,
+            callId: '-----',
+            callIdFull: '-'
+          },
+          callee: {
+            name:      map.to_displayname,
+            client:    '',
+            extension: map.to_extension,
+            ip:        map.to_ip
+          },
+        });
       })
-    //)
       .catch(err => console.log('err ' + err))
       .then(this.setState({ message: "bummer" }))
     }.bind(this), 3000)
   }
 
-  componentDidMount() {
-    //this.searchExtension(this.state.extensionFromUser);
-  }
-
   handleSearch(evt) {
     var userInput = {
       extension: ReactDOM.findDOMNode(this.refs.refExt).value,
-      from: ReactDOM.findDOMNode(this.refs.refTimeFrom).value,
-      to: ReactDOM.findDOMNode(this.refs.refTimeTo).value,
-      timeZone: ReactDOM.findDOMNode(this.refs.refTimeZone).value
+      from:      ReactDOM.findDOMNode(this.refs.refTimeFrom).value,
+      to:        ReactDOM.findDOMNode(this.refs.refTimeTo).value,
+      timeZone:  ReactDOM.findDOMNode(this.refs.refTimeZone).value
     }
-    this.searchExtension(userInput);
+
+    var emptyEndpoint = undefined;
+    this.setState({
+      id: 'Please Wait...',
+      display: false,
+      caller: emptyEndpoint,
+      callee: emptyEndpoint
+    });
+
+    // this.searchExtension(userInput);
+    this.searchExtension({
+      extension: '6598550',
+      from:      '2017-12-20T10:00:00',
+      to:        '2017-12-20T23:00:00',
+      timeZone:  'CST'
+    });
+    // this.searchExtension({
+    //   extension: '+14167585550',
+    //   from:      '2018-01-04T07:00:00',
+    //   to:        '2018-01-04T10:00:00',
+    //   timeZone:  'CST'
+    // });
   }
 
   render() {
+    var callFlow;
+    if (this.state.display) {
+      callFlow = (
+        <div id="callFlow">
+          <Endpoint endpoint={this.state.caller}/>
+          <Link     link={this.state.link1} />
+          <Node     node={this.state.node1} />
+          <Link     link={this.state.link2} />
+          <Node     node={this.state.node2} />
+          <Link     link={this.state.link3} />
+          <Endpoint endpoint={this.state.callee}/>
+        </div>
+      )
+    } else {
+      callFlow = <div>---</div>
+    }
     return (
       <div className="canvas" id="canvas1">
         <div id="userInput">
-          <input ref="refExt" type="text"/>
-          <input ref="refTimeFrom" type="text" />
-          <input ref="refTimeTo" type="text" />
-          <input ref="refTimeZone" type="text" />
+          <input ref="refExt" type="text" placeholder="Caller Extension" autoFocus/>
+          <input ref="refTimeFrom" type="text" placeholder="From Time" />
+          <input ref="refTimeTo" type="text" placeholder="To Time" />
+          <input ref="refTimeZone" type="text" placeholder="Time Zone" />
           <button onClick={this.handleSearch}>Search</button>
         </div>
         <div className="App">
-          <h4>Sumo Job ID: {this.state.id}</h4>
-          <Caller name={this.state.caller}
-                  client="Lifesize Web Client"
-                  extension={this.state.callerExt}
-                  ip={this.state.srcIp}
-          />
-          <Caller name={this.state.callee}
-                  client="Lifesize Web Client"
-                  extension={this.state.calleeExt}
-                  ip="999.888.777.666"
-          />
+          <h6>Sumo Job ID: {this.state.id}</h6>
+          {callFlow}
         </div>
       </div>
     );
