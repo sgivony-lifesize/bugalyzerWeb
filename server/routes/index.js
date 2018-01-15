@@ -39,8 +39,8 @@ var sleep = (ms) => function() {
 };
 
 router.use(bodyParser.json());
-router.post('/q', function(req, res, next) {
-  console.log('/q called');
+router.post('/find', function(req, res, next) {
+  console.log('/find called');
   console.log('Extension: ' + req.body.extension);
   console.log('From:      ' + req.body.from);
   console.log('To:        ' + req.body.to);
@@ -48,21 +48,15 @@ router.post('/q', function(req, res, next) {
 
   fetchOptions.method = 'POST';
   fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
-  /*return */fetch(url, fetchOptions)
+  return fetch(url, fetchOptions)
   // .then(r => console.log('Cookies: ' + r.headers.getAll('set-cookie')))
   .then(r => {
     coo = r.headers.getAll('set-cookie');
-    console.log('Cookies: ' + coo);
+    console.log('Cookies:   ' + coo);
     return r.json();
   })
-  // .then(function(json) {
-  //   //json.cookie = coo;
-  //   console.log('JOB ID:  ' + json.id);
-  //   return /*jobId =*/json.id;
-  //   //return res.send(json);
-  // })
   .then(json => {
-    console.log('JOB ID:  ' + json.id);
+    console.log('JOB ID:    ' + json.id);
     jobId = json.id;
     fetchOptions.method = 'GET';
     fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
@@ -71,112 +65,22 @@ router.post('/q', function(req, res, next) {
   })
   .then(sleep(3000))
   .then(() => {
-      return fetch(url + jobId+ '/messages?offset=0&limit=100', fetchOptions)
-      .then(r => r.json())
-      //.then(json => res.send(json))
-      .then(json => {
-        //console.log('Response: %j', json);
-        var f = json.messages[0].map.from_displayname;
-        var t = json.messages[0].map.to_displayname;
-        //console.log('Response: ' + JSON.stringify(json.messages[0], null, 2));
-        console.log('--> Found a call from ' + f + ' to ' + t);
-        //return res.send(json);
-        return json;
-      })
-      .catch(err => {
-        console.log(err);
-        res.json({ error: err });
-      });
+    return fetch(url + jobId + '/messages?offset=0&limit=100', fetchOptions)
+    .then(r => r.json())
+    .then(json => {
+      var f = json.messages[0].map.from_displayname;
+      var t = json.messages[0].map.to_displayname;
+      //console.log('Response: ' + JSON.stringify(json.messages[0], null, 2));
+      console.log('--> Found a call from ' + f + ' to ' + t);
+      json.sumoJobId = jobId;
+      json.success = true;
+      return res.send(json);
+    })
+    .catch(err => {
+      console.log(err);
+      return res.json({ success: false });
+    });
   })
-  .then(json => res.send(json))
-});
-
-router.post('/id1', function(req, res, next) {
-  console.log('/id1 called with extension ' + req.body.extension);
-
-  fetchOptions.method = 'POST';
-  fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
-  fetch(url, fetchOptions)
-  // .then(r => console.log('Cookies: ' + r.headers.getAll('set-cookie')))
-  .then(r => {
-    coo = r.headers.getAll('set-cookie');
-    console.log('Cookies: ' + coo);
-    return r.json();
-  })
-  .then(function(json) {
-    json.cookie = coo;
-    console.log('JOB ID:  ' + json.id);
-    return res.send(json);
-  })
-  .catch(err => {
-    console.log(err);
-    res.json({ error: err });
-  });
-});
-
-router.post('/query1', function(req, res, next) {
-  console.log('/query1/ called with job id ' + req.body.id);
-
-  fetchOptions.method = 'GET';
-  fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
-  fetchOptions.headers.cookie = coo;
-
-  return fetch(url + req.body.id + '/messages?offset=0&limit=100', fetchOptions)
-  .then(r => r.json())
-  .then(json => {
-    console.log('Response: ' + JSON.stringify(json.messages, null, 2));
-    res.send(json);
-  })
-  .catch(err => {
-    console.log(err);
-    res.json({ error: err });
-  });
-});
-
-router.post('/id2', function(req, res, next) {
-  console.log('/id2 called with extension ' + req.body.extension);
-
-  fetchOptions.method = 'POST';
-  fetchOptions.body = sprintf(query4, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
-  delete fetchOptions.headers.cookie;
-
-  fetch(url, fetchOptions)
-  // .then(r => console.log('Cookies: ' + r.headers.getAll('set-cookie')))
-  .then(r => {
-    coo = r.headers.getAll('set-cookie');
-    console.log('Cookies: ' + coo);
-    return r.json();
-  })
-  .then(function(json) {
-    console.log('JOB ID:  ' + JSON.stringify(json, null, 2));
-    json.cookie = coo;
-    console.log('JOB ID:  ' + JSON.stringify(json, null, 2));
-    console.log('JOB ID:  ' + json.id);
-    return res.send(json);
-  })
-  .catch(err => {
-    console.log(err);
-    res.json({ error: err });
-  });
-});
-
-router.post('/query2', function(req, res, next) {
-  console.log('/query2/ called with job id ' + req.body.id);
-
-  fetchOptions.method = 'GET';
-  fetchOptions.body = sprintf(query4, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
-  fetchOptions.headers.cookie = coo;
-
-  return fetch(url + req.body.id + '/messages?offset=0&limit=100', fetchOptions)
-  .then(r => r.json())
-  .then(json => {
-    console.log('Response: ' + JSON.stringify(json.messages, null, 2));
-    res.send(json);
-  })
-  .catch(err => {
-    console.log(err);
-    res.json({ error: err });
-  });
 });
 
 module.exports = router;
