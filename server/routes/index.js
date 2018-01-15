@@ -18,6 +18,7 @@ const query5 = "{ \"query\": \"(_sourceCategory=prod/css/cdr ) or (_sourceCatego
 
 
 var coo;
+var jobId;
 
 const fetchOptions = {
   // mode: 'cross-domain',
@@ -31,7 +32,65 @@ const fetchOptions = {
   },
 }
 
+var sleep = (ms) => function() {
+  return new Promise((resolve) =>
+    setTimeout(resolve.bind(null, ...arguments), ms)
+  );
+};
+
 router.use(bodyParser.json());
+router.post('/q', function(req, res, next) {
+  console.log('/q called');
+  console.log('Extension: ' + req.body.extension);
+  console.log('From:      ' + req.body.from);
+  console.log('To:        ' + req.body.to);
+  console.log('Time Zone: ' + req.body.timeZone);
+
+  fetchOptions.method = 'POST';
+  fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+  /*return */fetch(url, fetchOptions)
+  // .then(r => console.log('Cookies: ' + r.headers.getAll('set-cookie')))
+  .then(r => {
+    coo = r.headers.getAll('set-cookie');
+    console.log('Cookies: ' + coo);
+    return r.json();
+  })
+  // .then(function(json) {
+  //   //json.cookie = coo;
+  //   console.log('JOB ID:  ' + json.id);
+  //   return /*jobId =*/json.id;
+  //   //return res.send(json);
+  // })
+  .then(json => {
+    console.log('JOB ID:  ' + json.id);
+    jobId = json.id;
+    fetchOptions.method = 'GET';
+    fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+    fetchOptions.headers.cookie = coo;
+    console.log('Waiting for job ' + jobId + '...');
+  })
+  .then(sleep(3000))
+  .then(() => {
+      return fetch(url + jobId+ '/messages?offset=0&limit=100', fetchOptions)
+      .then(r => r.json())
+      //.then(json => res.send(json))
+      .then(json => {
+        //console.log('Response: %j', json);
+        var f = json.messages[0].map.from_displayname;
+        var t = json.messages[0].map.to_displayname;
+        //console.log('Response: ' + JSON.stringify(json.messages[0], null, 2));
+        console.log('--> Found a call from ' + f + ' to ' + t);
+        //return res.send(json);
+        return json;
+      })
+      .catch(err => {
+        console.log(err);
+        res.json({ error: err });
+      });
+  })
+  .then(json => res.send(json))
+});
+
 router.post('/id1', function(req, res, next) {
   console.log('/id1 called with extension ' + req.body.extension);
 

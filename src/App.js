@@ -19,6 +19,77 @@ class App extends Component {
     };
   }
 
+  searchExtension1(userInput) {
+    fetch('/api/q', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userInput)
+    })
+    .then(res => {
+      console.log('YO');
+      return res.json();
+    })
+    .then(json => {
+      console.log(json);
+      var map = json.messages[0].map;
+      this.setState({
+        display: true,
+        caller: {
+          name:      map.from_displayname,
+          client:    '',
+          extension: map.from_extension,
+          ip:        map.from_ip
+        },
+        link1: {
+          divId: 1,
+          callId: '-----',
+          callIdFull: '-'
+        },
+        node1: {
+          index: 1,
+          name: '-----------------------------------',
+          version: '-',
+          ipExt: '-',
+          ipInt: '-',
+          ib: '-',
+          ibFull: '-',
+          ob: '-',
+          obFull: '-'
+        },
+        link2: {
+          divId: 2,
+          callId: '-----',
+          callIdFull: '-'
+        },
+        node2: {
+          index: 2,
+          name: '-----------------------------------',
+          version: '-',
+          ipExt: '-',
+          ipInt: '-',
+          ib: '-',
+          ibFull: '-',
+          ob: '-',
+          obFull: '-'
+        },
+        link3: {
+          divId: 3,
+          callId: '-----',
+          callIdFull: '-'
+        },
+        callee: {
+          name:      map.to_displayname,
+          client:    '',
+          extension: map.to_extension,
+          ip:        map.to_ip
+        },
+      });
+    });
+  }
+
   searchExtension(userInput) {
 
     var idv;
@@ -230,7 +301,7 @@ class App extends Component {
     });
 
     // this.searchExtension(userInput);
-    this.searchExtension({
+    this.searchExtension1({
       extension: '6598550',
       from:      '2017-12-20T10:00:00',
       to:        '2017-12-20T23:00:00',
