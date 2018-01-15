@@ -20,7 +20,7 @@ class App extends Component {
   }
 
   searchExtension(userInput) {
-    fetch('/api/find', {
+    fetch('/api/search', {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -32,6 +32,7 @@ class App extends Component {
     .then(json => {
       console.log("success: " + json.success);
       if (json.success) {
+        console.log(json);
         var map = json.messages[0].map;
         this.setState({
           error: false,
@@ -111,23 +112,29 @@ class App extends Component {
       callee: emptyEndpoint
     });
 
-    // this.searchExtension(userInput);
-    this.searchExtension({
-      extension: '6598550',
-      from:      '2017-12-20T10:00:00',
-      to:        '2017-12-20T23:00:00',
-      timeZone:  'CST'
+    if (userInput.extension === '' &&
+        userInput.from === '' &&
+        userInput.to === '' &&
+        userInput.timeZone === '') {
+      this.searchExtension({
+        extension: '6598550',
+        from:      '2017-12-20T10:00:00',
+        to:        '2017-12-20T23:00:00',
+        timeZone:  'CST'
 
-      // extension: '+14167585550',
-      // from:      '2018-01-04T07:00:00',
-      // to:        '2018-01-04T10:00:00',
-      // timeZone:  'CST'
+        // extension: '+14167585550',
+        // from:      '2018-01-04T07:00:00',
+        // to:        '2018-01-04T10:00:00',
+        // timeZone:  'CST'
 
-      // extension: '2549448',
-      // from:      '2018-01-10T08:30:00',
-      // to:        '2018-01-10T08:40:00',
-      // timeZone:  'CST'
-    });
+        // extension: '2549448',
+        // from:      '2018-01-10T08:30:00',
+        // to:        '2018-01-10T08:40:00',
+        // timeZone:  'CST'
+      });
+    } else {
+      this.searchExtension(userInput);
+    }
   }
 
   render() {
@@ -163,6 +170,8 @@ class App extends Component {
         </div>
         <div className="App">
           <h6>Sumo Job ID: {this.state.sumoJobId}</h6>
+          <br />
+          <br />
           {callFlow}
         </div>
       </div>

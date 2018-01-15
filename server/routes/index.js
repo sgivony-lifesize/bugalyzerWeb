@@ -26,7 +26,7 @@ const fetchOptions = {
   redirect: 'follow',
   headers: {
     'authorization': 'Basic c3UxbXkycGNnNlM0dmo6azNnakNHUElVY1NtTEdON1NWc0VWcXRPbFo2U1Q1Vmo3RUJjckdINGlBdUJXOVpPV092bGk5empYSmg4Qkdsbw==',
-    'cache-control': 'no-cache',
+    'cache-control': 'no-cache, no-store, must-revalidate',
     'Accept': 'application/json',
     'Content-Type': 'application/json'
   },
@@ -38,32 +38,25 @@ var sleep = (ms) => function() {
   );
 };
 
-router.use(bodyParser.json());
-router.post('/find', function(req, res, next) {
-  console.log('/find called');
-  console.log('Extension: ' + req.body.extension);
-  console.log('From:      ' + req.body.from);
-  console.log('To:        ' + req.body.to);
-  console.log('Time Zone: ' + req.body.timeZone);
-
+function querySumo(query) {
   fetchOptions.method = 'POST';
-  fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+  fetchOptions.body = query;
+  fetchOptions.headers.cookie = '';
   return fetch(url, fetchOptions)
-  // .then(r => console.log('Cookies: ' + r.headers.getAll('set-cookie')))
   .then(r => {
+    //console.log('Result:    ' + JSON.stringify(r.headers, null, 2));
     coo = r.headers.getAll('set-cookie');
-    console.log('Cookies:   ' + coo);
     return r.json();
   })
   .then(json => {
     console.log('JOB ID:    ' + json.id);
     jobId = json.id;
     fetchOptions.method = 'GET';
-    fetchOptions.body = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+    fetchOptions.body = query;
     fetchOptions.headers.cookie = coo;
-    console.log('Waiting for job ' + jobId + '...');
+    console.log('Waiting for job ' + jobId + ' to complete...');
   })
-  .then(sleep(3000))
+  .then(() => querySumoStatus())
   .then(() => {
     return fetch(url + jobId + '/messages?offset=0&limit=100', fetchOptions)
     .then(r => r.json())
@@ -71,16 +64,46 @@ router.post('/find', function(req, res, next) {
       var f = json.messages[0].map.from_displayname;
       var t = json.messages[0].map.to_displayname;
       //console.log('Response: ' + JSON.stringify(json.messages[0], null, 2));
-      console.log('--> Found a call from ' + f + ' to ' + t);
+      console.log('--> Found a call from \"' + f + '\" to \"' + t + '\"');
       json.sumoJobId = jobId;
       json.success = true;
-      return res.send(json);
+      return json;
     })
     .catch(err => {
       console.log(err);
-      return res.json({ success: false });
+      return { success: false };
     });
   })
+}
+
+async function querySumoStatus() {
+  fetchOptions.method = 'GET';
+  fetchOptions.body = '';
+  var done = false;
+  var res;
+  while (!done) {
+    res = await fetch(url + jobId , fetchOptions)
+    .then(r => r.json())
+    .then(sleep(500))
+    .then(json => {
+      console.log('Job ' + jobId +': ' + json.state + ' (messages: ' + json.messageCount + ')');
+      done = (json.state === "DONE GATHERING RESULTS");
+    })
+  }
+  return res;
+}
+
+router.use(bodyParser.json());
+router.post('/search', function(req, res, next) {
+  console.log('/search called');
+  console.log('Extension: ' + req.body.extension);
+  console.log('From:      ' + req.body.from);
+  console.log('To:        ' + req.body.to);
+  console.log('Time Zone: ' + req.body.timeZone);
+
+  sumoQuery = sprintf(query1, req.body.extension, req.body.from, req.body.to, req.body.timeZone);
+  querySumo(sumoQuery)
+  .then(json => res.send(json));
 });
 
 module.exports = router;
