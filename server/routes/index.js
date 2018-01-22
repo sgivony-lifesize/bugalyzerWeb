@@ -16,27 +16,6 @@ const query4 = "{ \"query\": \"_sourceCategory=\\\"prod/css/transactions\\\" \\\
 
 const query5 = "{ \"query\": \"(_sourceCategory=prod/css/cdr ) or (_sourceCategory=prod/css/calltrace  \\\"call-ID\\\" \\\"assigned to CallHandlerJSON\\\")| if(_raw matches \\\"*CSS-1.2|*\\\", 2, 1) as stream| parse \\\"*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|\\\" as CssVersion,node_id,confid,callHandlerID,RemoteEndpointID,Direction,ProtocolStack,CallSetupResult,TerminationReason,VerboseTerminationDetails,from_extension,CallerID,CallerIPandPort,CallerProductandVersion,CalledUserID,to,CalledIPandPort,CalledProductandVersion,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,ConnectionDuration,CallType,Encryption nodrop|parse regex field=callerid \\\"sips:(?<test>.*?)@\\\" nodrop|parse regex field=callerid \\\"sip:(?<test2>.*?)@\\\" nodrop|parse regex field=to \\\"sips:(?<to>.*?)@\\\" nodrop|parse regex field=_sourcehost \\\"(?<node>.*)-\\\"| parse \\\"CallTrace\t|UNKNOWN|*|\\\" as first_ib nodrop| parse \\\" call-ID: *] \\\" as callid nodrop|_messagetime as _timeslice|if (isempty(test),test2,test) as test3|if (isempty(from_extension),test3,from_extension) as from_extension|if (!(callHandlerID  matches(\\\"*CLUSTER*\\\")) and direction matches \\\"IB\\\",\\\"First Leg\\\",\\\"\\\") as Leg_type|count by _timeslice,stream,node,node_id,from_extension,callHandlerID,to,direction,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,first_ib,callid,Leg_type| join ( where stream=1) as t1,( where stream=2) as t2 on t2.callHandlerID=t1.first_ib |count by t2_node,t2_node_id,t2_from_extension,t2_Leg_type,t2_callHandlerID,t1_callid,t2_to,t2_direction,t2_SetupTimestamp,t2_ConnectedTimestamp,t2_DisconnectedTimestamp|t2_node as node|t2_node_id as node_id|t2_from_extension as from_extension|t2_callHandlerID as callHandlerID|t1_callid as callid|t2_Leg_type as Leg_type|t2_to as to|t2_direction as direction|t2_SetupTimestamp as SetupTimestamp|t2_ConnectedTimestamp as ConnectedTimestamp|t2_DisconnectedTimestamp as DisconnectedTimestamp|where t2_from_extension matches \\\"%s\\\"|sort by t2_node,t1_callid|fields -_count,t2_node_id,t2_from_extension,t2_callHandlerID,t1_callid,t2_node,t2_Leg_type,t2_to,t2_direction,t2_SetupTimestamp,t2_ConnectedTimestamp,t2_DisconnectedTimestamp\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
 
-const query6 =
-"{ \"query\": \"(_sourceCategory=prod/css/calltrace \\\"referenceCallID\\\" or \\\"assigned to CallHandlerJSON\\\" or (\\\"play\\\"and \\\"OUTBOUND\\\"))" +
-"| if(_raw matches \\\"*referenceCallID*\\\", 2, if(_raw matches \\\"*play*\\\", 3, 1)) as stream" +
-"| _messagetime as _timeslice" +
-"| parse \\\"|CallTrace\\t|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|TlcCall [ptr: *, call-ID: *] assigned to CallHandlerJSON [ptr: *, call-ID: *]\\\"" +
-" as inbound,ptr1,sip_id,ptr2,uk1 nodrop" +
-// "| where !(inbound matches \\\"*CLUSTER*\\\")" +
-// "| parse \\\"|CallTrace\\t|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|Creating Call Handler. referenceCallID:[*] \\\" as outbound,inbound nodrop" +
-// "| parse \\\"|OUTBOUND|*|\\\" as outbound nodrop" +
-// "| parse \\\"callmgrtag=*;\\\" as callmgrtag nodrop" +
-// "| count by _timeslice,inbound,outbound,sip_id,callmgrtag,stream" +
-// "| join " +
-// "( where stream=1 ) as t1," +
-// "( where stream=2 ) as t2," +
-// "( where stream=3 ) as t3 " +
-// "on t2.inbound=t1.inbound and t3.outbound=t2.outbound" +
-// "| formatDate(t1__timeslice, \\\"MM/dd/yyyy HH:mm:ss:SSS\\\") as messageDate" +
-// "|t1_inbound as inbound|t1_sip_id as sip_id|t2_outbound as outbound|t3_callmgrtag as callmgrtag" +
-// "|fields messageDate,sip_id,inbound,outbound,callmgrtag" +
-"\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
-
 const query7 =
 "{ \"query\": \"(_sourceCategory=prod/css/calltrace \\\"referenceCallID\\\" or \\\"assigned to CallHandlerJSON\\\" or (\\\"play\\\" and \\\"OUTBOUND\\\")) or (_sourcecategory = \\\"prod/css/cdr\\\" )" +
 "| if(_raw matches \\\"*referenceCallID*\\\", 2, if(_raw matches \\\"*play*\\\", 3, if(_raw matches \\\"CSS-1.2|*\\\",4,1))) as stream" +
@@ -152,69 +131,6 @@ async function querySumoStatus() {
 }
 
 router.use(bodyParser.json());
-
-// var ans = {
-//   caller: {
-//     name:      '',
-//     client:    '',
-//     extension: '',
-//     ip:        ''
-//   },
-//   link1: {
-//     // divId: 1,
-//     callIdShort: '-----',
-//     callId: '-'
-//   },
-//   node1: {
-//     // index: 1,
-//     name: '-----------------------------------',
-//     version: '-',
-//     ipExt: '-',
-//     ipInt: '-',
-//     ib: '-',
-//     ibShort: '-',
-//     ob: '-',
-//     obShort: '-'
-//   },
-//   link2: {
-//     // divId: 2,
-//     callIdShort: '-----',
-//     callId: '-'
-//   },
-//   node2: {
-//     // index: 2,
-//     name: '-----------------------------------',
-//     version: '-',
-//     ipExt: '-',
-//     ipInt: '-',
-//     ib: '-',
-//     ibShort: '-',
-//     ob: '-',
-//     obShort: '-'
-//   },
-//   link3: {
-//     divId: 3,
-//     callIdShort: '-----',
-//     callId: '-'
-//   },
-//   callee: {
-//     name:      '',
-//     client:    '',
-//     extension: '',
-//     ip:        ''
-//   },
-// };
-//
-// var ans1 = {
-//   caller: {},
-//   link1: {},
-//   node1: {},
-//   link2: {},
-//   node3: {},
-//   link3: {},
-//   callee: {},
-//   callmgrtag: ''
-// }
 
 router.post('/search', function(req, res, next) {
   console.log('/search called');
