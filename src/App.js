@@ -101,6 +101,7 @@ class App extends Component {
     var emptyEndpoint = undefined;
     this.setState({
       sumoJobId: 'Please Wait...',
+      calls: [],
       display: false,
       caller: emptyEndpoint,
       callee: emptyEndpoint
@@ -121,21 +122,52 @@ class App extends Component {
         // to:        '2018-01-04T10:00:00',
         // timeZone:  'CST'
 
-        extension: '2549448',
-        from:      '2018-01-10T08:30:00',
-        to:        '2018-01-10T08:40:00',
-        timeZone:  'CST'
+        // extension: '2549448',
+        // from:      '2018-01-10T08:30:00',
+        // to:        '2018-01-10T08:40:00',
+        // timeZone:  'CST'
 
         // extension: '2194450',
         // from:      '2018-01-20T00:00:00',
         // to:        '2018-01-20T01:07:00',
         // timeZone:  'CST'
+
+        // extension: '1313',
+        // from:      '2018-01-22T09:30:00',
+        // to:        '2018-01-22T09:55:00',
+        // timeZone:  'CST'
+
+        extension: '6598550',
+        from:      '2018-01-22T20:00:00',
+        to:        '2018-01-22T21:00:00',
+        timeZone:  'CST'
       });
     } else {
       this.searchExtension(userInput);
     }
   }
 
+  getValue(prop) {
+    if (prop !== undefined && prop !== "") {
+      return prop;
+    } else {
+      return 'N/A';
+    }
+  }
+  getValueLeg(prop, shortForm) {
+    if (prop !== undefined && prop !== "") {
+      return shortForm ? prop.substring(prop.length - 4) : prop;
+    } else {
+      return 'N/A';
+    }
+  }
+  getValueCallId(prop, shortForm) {
+    if (prop !== undefined && prop !== "") {
+      return shortForm ? prop.substring(0, 12) : prop;
+    } else {
+      return 'N/A';
+    }
+  }
   onCallSelected() {
     var myselect = document.getElementById("callSelect");
     var map = this.state.json[myselect.selectedIndex-1];
@@ -143,42 +175,44 @@ class App extends Component {
       error: false,
       display: true,
       caller: {
-        name:      map.caller.name ? map.caller.name : 'N/A',
+        name:      this.getValue(map.caller.name),
         client:    '',
-        extension: map.caller.extension ? map.caller.extension : 'N/A',
-        ip:        map.from_ip ? map.from_ip : 'N/A'
+        extension: this.getValue(map.caller.extension),
+        ip:        this.getValue(map.from_ip)
       },
       link1: {
         divId: 1,
-        callId: map.link1.callId.substring(0,12),
-        callIdFull: map.link1.callId
+        callId: this.getValueCallId(map.link1.callId, true),
+        callIdFull: this.getValueCallId(map.link1.callId, false)
       },
       node1: {
         index: 1,
-        name: '-----------------------------------',
-        version: '-',
-        ipExt: '-',
-        ipInt: '-',
-        ib: map.node1.ib.substring(map.node1.ib.length - 4),
-        ibFull: map.node1.ib,
-        ob: map.node1.ob.substring(map.node1.ob.length - 4),
-        obFull: map.node1.ob
+        id: this.getValue(map.node1.id),
+        name: this.getValue(map.node1.name) + '  [' + this.getValue(map.node1.id) + ']',
+        version: '--------------------------------',
+        ipExt: this.getValue(map.node1.ipExt),
+        ipInt: this.getValue(map.node1.ipInt),
+        ib: this.getValueLeg(map.node1.ib, true),
+        ibFull: this.getValueLeg(map.node1.ib, false),
+        ob: this.getValueLeg(map.node1.ob, true),
+        obFull: this.getValueLeg(map.node1.ob, false)
       },
       link2: {
         divId: 2,
-        callId: '-----',
-        callIdFull: '-'
+        callId: this.getValueCallId(map.link2.callId, true),
+        callIdFull: this.getValueCallId(map.link2.callId, false)
       },
       node2: {
         index: 2,
-        name: '-----------------------------------',
-        version: '-',
-        ipExt: '-',
-        ipInt: '-',
-        ib: '-',
-        ibFull: '-',
-        ob: '-',
-        obFull: '-'
+        id: this.getValue(map.node2.id),
+        name: this.getValue(map.node2.name) + '  [' + this.getValue(map.node2.id) + ']',
+        version: '--------------------------------',
+        ipExt: this.getValue(map.node2.ipExt),
+        ipInt: this.getValue(map.node2.ipInt),
+        ib: this.getValueLeg(map.node2.ib, true),
+        ibFull: this.getValueLeg(map.node2.ib, false),
+        ob: this.getValueLeg(map.node2.ob, true),
+        obFull: this.getValueLeg(map.node2.ob, false)
       },
       link3: {
         divId: 3,

@@ -4,25 +4,39 @@ var fetch = require('node-fetch');
 var bodyParser = require('body-parser');
 var sprintf = require("sprintf-js").sprintf
 
+const CSS_NODES = {
+  "1I14" : { name: "San Jose 1",    wan: "192.155.215.197", lan: "10.90.32.219"   },
+  "RmUN" : { name: "Melbourne 1",   wan: "168.1.68.251",    lan: "10.118.0.103"   },
+  "5lh4" : { name: "Washington 4",  wan: "169.55.87.188",   lan: "10.148.82.237"  },
+  "fJdc" : { name: "Toronto 1",     wan: "169.53.184.72",   lan: "10.114.233.202" },
+  "FUrl" : { name: "Sao Paulo 1",   wan: "169.57.160.228",  lan: "10.150.190.243" },
+  "gf3g" : { name: "San Jose 3",    wan: "169.45.75.100",   lan: "10.160.141.162" },
+  "soqY" : { name: "Frankfurt 2",   wan: "159.122.100.42",  lan: "10.134.114.174" },
+  "8cLo" : { name: "London 2",      wan: "5.10.105.200",    lan: "10.112.27.204"  },
+  "e7Ob" : { name: "Hong Kong 2",   wan: "119.81.134.226",  lan: "10.110.16.66"   },
+  "xNNH" : { name: "Mexico City 1", wan: "169.57.7.200",    lan: "10.130.22.235"  },
+  "pkqS" : { name: "Dallas 6",      wan: "23.246.195.8",    lan: "10.107.35.206"  },
+  "Vwp6" : { name: "Washington 1",  wan: "50.97.60.166",    lan: "10.56.150.202"  },
+  "mCvS" : { name: "Amsterdam 1",   wan: "5.153.63.162",    lan: "10.104.163.194" },
+  "T3NB" : { name: "Dallas 7",      wan: "184.173.213.195", lan: "10.51.43.68"    },
+  "hflr" : { name: "Washington 2",  wan: "169.63.70.87",    lan: "10.65.27.16"    },
+  "AylT" : { name: "Paris 1",       wan: "159.8.77.42",     lan: "10.127.230.72"  },
+  "geCs" : { name: "Channai 1",     wan: "169.38.84.49",    lan: "10.162.54.88"   },
+  "6opA" : { name: "Milan 1",       wan: "159.122.152.111", lan: "10.144.77.62"   },
+  "Lfxy" : { name: "Amsterdam 3",   wan: "159.8.223.72",    lan: "10.137.60.134"  },
+  "kyT4" : { name: "Dallas 10",     wan: "169.46.49.132",   lan: "10.177.21.144"  },
+};
+
 const url = 'https://api.us2.sumologic.com/api/v1/search/jobs/';
-const query1 = "{\n  \"query\": \"_sourceCategory=\\\"prod/css/transactions\\\" \\\"CallRoutingState\\\" \\\"callStatus=\\\" | parse \\\"|*|*|\\\" as type,nodeid | parse \\\"ONFERENCE|*|*|*|CallRoutingState|\\\" as confid,participant_id,callmanager_id | parse \\\"to.email=*, to.displayName=*, to.group=*,\\\" as to_email,to_displayname,to_group | parse \\\"to.userID=*, to.extension=*,\\\" as to_userID,to_extension |parse \\\"callStatus=*, dialString=*, destination.uri.user=*, destination.uri.host=*, from.userID=*, from.extension=*, from.email=*, from.displayName=*, from.group=*, from.provisioned=*, from.registered=*, from.guest=*, from.uri.user=*, from.interface=*, from.protocol=*, from.IP=*, from.vendorIdentifier.productID=*, from.vendorIdentifier.versionID=*, from.alias.E164=*, from.alias.H323ID=*, from.alias.URLID=*, from.alias.EMAILID=*, from.alias.TRANSPORTADDRESS=*, from.alias.PARTYNUMBER=*, from.alias.SIPURI=*, from.alias.x-DeviceId=*, from.alias.cssParticipantId=*,\\\" as callStatus, dialString, destination_uri_user, destination_uri_host, from_userID, from_extension, from_email, from_displayName, from_group, from_provisioned, from_registered, from_guest, from_uri_user, from_interface, from_protocol, from_IP, from_vendorIdentifier_productID, from_vendorIdentifier_versionID, from_alias_E164, from_alias_H323ID, from_alias_URLID, from_alias_EMAILID, from_alias_TRANSPORTADDRESS, from_alias_PARTYNUMBER, from_alias_SIPURI, from_alias_x_DeviceId, from_alias_cssParticipantId |parse regex field=from_alias_SIPURI \\\"sip:(?<test>.*?)@\\\" nodrop |_messagetime as _timeslice |if (isempty(from_extension),test,from_extension) as from_extension |if (isempty(from_extension),from_uri_user,from_extension) as from_extension |where from_extension matches \\\"%s\\\" |count by _timeslice,nodeid,confid,callstatus,dialstring,from_extension,to_userID,to_extension,from_displayname,to_displayname |sort by _timeslice asc //|count confid |fields -_count\",\n  \"from\": \"%s\",\n  \"to\": \"%s\",\n  \"timeZone\": \"%s\"\n}\n";
-const query2 = "{   \"query\": \"(_sourceCategory=\\\"prod/css/cdr\\\" ) or (_sourceCategory=\\\"prod/css/calltrace\\\" \\\"call-ID assigned to CallHandlerJSON\\\") | if(_raw matches \\\"*CSS-1.2|*\\\", 2, 1) as stream| parse \\\"*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|\\\" as CssVersion,node_id,confid,callHandlerID,RemoteEndpointID,Direction,ProtocolStack,CallSetupResult,TerminationReason,VerboseTerminationDetails,from_extension,CallerID,CallerIPandPort,CallerProductandVersion,CalledUserID,to,CalledIPandPort,CalledProductandVersion,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,ConnectionDuration,CallType,Encryption nodrop|parse regex field=callerid \\\"sips:(?<test>.*?)@\\\" nodrop|parse regex field=callerid \\\"sip:(?<test2>.*?)@\\\" nodrop |parse regex field=to \\\"sips:(?<to>.*?)@\\\" nodrop|parse regex field=_sourcehost \\\"(?<node>.*)-\\\"| parse \\\"CallTrace\t|UNKNOWN|*|\\\" as first_ib nodrop| parse \\\" call-ID: *] \\\" as callid nodrop|_messagetime as _timeslice|if (isempty(test),test2,test) as test3|if (isempty(from_extension),test3,from_extension) as from_extension|if (!(callHandlerID  matches(\\\"*CLUSTER*\\\")) and direction matches \\\"IB\\\",\\\"First Leg\\\",\\\"\\\") as Leg_type|count by _timeslice,stream,node,node_id,from_extension,callHandlerID,to,direction,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,first_ib,callid,Leg_type| join( where stream=1) as t1, ( where stream=2) as t2 on t2.callHandlerID=t1.first_ib|count by t2_node,t2_node_id,t2_from_extension,t2_Leg_type,t2_callHandlerID,t1_callid,t2_to,t2_direction,t2_SetupTimestamp,t2_ConnectedTimestamp,t2_DisconnectedTimestamp|t2_node as node|t2_node_id as node_id|t2_from_extension as from_extension|t2_callHandlerID as callHandlerID|t1_callid as callid|t2_Leg_type as Leg_type|t2_to as to|t2_direction as direction|t2_SetupTimestamp as SetupTimestamp|t2_ConnectedTimestamp as ConnectedTimestamp|t2_DisconnectedTimestamp as DisconnectedTimestamp|where t2_from_extension matches \\\"%s\\\"|sort by t2_node,t1_callid|fields-_count,t2_node_id,t2_from_extension,t2_callHandlerID,t1_callid,t2_node,t2_Leg_type,t2_to,t2_direction,t2_SetupTimestamp,t2_ConnectedTimestamp,t2_DisconnectedTimestamp\",   \"from\": \"%s\",  \"to\": \"%s\",   \"timeZone\": \"%s\" } ";
 
-const query3 = "{ \"query\": \"(_sourceCategory=prod/css/cdr ) or (_sourceCategory=prod/css/calltrace  call-ID assigned to CallHandlerJSON)\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
-
-
-// working!
-const query4 = "{ \"query\": \"_sourceCategory=\\\"prod/css/transactions\\\" \\\"CallRoutingState\\\" \\\"callStatus=\\\" | parse \\\"|*|*|\\\" as type,nodeid | parse \\\"ONFERENCE|*|*|*|CallRoutingState|\\\" as confid,participant_id,callmanager_id| parse \\\"to.email=*, to.displayName=*, to.group=*,\\\" as to_email,to_displayname,to_group| parse \\\"to.userID=*, to.extension=*,\\\" as to_userID,to_extension |parse \\\"callStatus=*, dialString=*, destination.uri.user=*, destination.uri.host=*, from.userID=*, from.extension=*, from.email=*, from.displayName=*, from.group=*, from.provisioned=*, from.registered=*, from.guest=*, from.uri.user=*, from.interface=*, from.protocol=*, from.IP=*, from.vendorIdentifier.productID=*, from.vendorIdentifier.versionID=*, from.alias.E164=*, from.alias.H323ID=*, from.alias.URLID=*, from.alias.EMAILID=*, from.alias.TRANSPORTADDRESS=*, from.alias.PARTYNUMBER=*, from.alias.SIPURI=*, from.alias.x-DeviceId=*, from.alias.cssParticipantId=*,\\\" as callStatus, dialString, destination_uri_user, destination_uri_host, from_userID, from_extension, from_email, from_displayName, from_group, from_provisioned, from_registered, from_guest, from_uri_user, from_interface, from_protocol, from_IP, from_vendorIdentifier_productID, from_vendorIdentifier_versionID, from_alias_E164, from_alias_H323ID, from_alias_URLID, from_alias_EMAILID, from_alias_TRANSPORTADDRESS, from_alias_PARTYNUMBER, from_alias_SIPURI, from_alias_x_DeviceId, from_alias_cssParticipantId|parse regex field=from_alias_SIPURI \\\"sip:(?<test>.*?)@\\\" nodrop|parse regex field=_sourcehost \\\"(?<node>.*)-\\\"|_messagetime as _timeslice|if (isempty(from_extension),test,from_extension) as from_extension|if (isempty(from_extension),from_uri_user,from_extension) as from_extension|where from_extension matches \\\"%s\\\"|count by _timeslice,node,confid,callstatus,dialstring,from_extension,to_userID,to_extension,from_displayname,to_displayname|sort by _timeslice asc|fields -_count\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
-
-const query5 = "{ \"query\": \"(_sourceCategory=prod/css/cdr ) or (_sourceCategory=prod/css/calltrace  \\\"call-ID\\\" \\\"assigned to CallHandlerJSON\\\")| if(_raw matches \\\"*CSS-1.2|*\\\", 2, 1) as stream| parse \\\"*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|\\\" as CssVersion,node_id,confid,callHandlerID,RemoteEndpointID,Direction,ProtocolStack,CallSetupResult,TerminationReason,VerboseTerminationDetails,from_extension,CallerID,CallerIPandPort,CallerProductandVersion,CalledUserID,to,CalledIPandPort,CalledProductandVersion,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,ConnectionDuration,CallType,Encryption nodrop|parse regex field=callerid \\\"sips:(?<test>.*?)@\\\" nodrop|parse regex field=callerid \\\"sip:(?<test2>.*?)@\\\" nodrop|parse regex field=to \\\"sips:(?<to>.*?)@\\\" nodrop|parse regex field=_sourcehost \\\"(?<node>.*)-\\\"| parse \\\"CallTrace\t|UNKNOWN|*|\\\" as first_ib nodrop| parse \\\" call-ID: *] \\\" as callid nodrop|_messagetime as _timeslice|if (isempty(test),test2,test) as test3|if (isempty(from_extension),test3,from_extension) as from_extension|if (!(callHandlerID  matches(\\\"*CLUSTER*\\\")) and direction matches \\\"IB\\\",\\\"First Leg\\\",\\\"\\\") as Leg_type|count by _timeslice,stream,node,node_id,from_extension,callHandlerID,to,direction,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,first_ib,callid,Leg_type| join ( where stream=1) as t1,( where stream=2) as t2 on t2.callHandlerID=t1.first_ib |count by t2_node,t2_node_id,t2_from_extension,t2_Leg_type,t2_callHandlerID,t1_callid,t2_to,t2_direction,t2_SetupTimestamp,t2_ConnectedTimestamp,t2_DisconnectedTimestamp|t2_node as node|t2_node_id as node_id|t2_from_extension as from_extension|t2_callHandlerID as callHandlerID|t1_callid as callid|t2_Leg_type as Leg_type|t2_to as to|t2_direction as direction|t2_SetupTimestamp as SetupTimestamp|t2_ConnectedTimestamp as ConnectedTimestamp|t2_DisconnectedTimestamp as DisconnectedTimestamp|where t2_from_extension matches \\\"%s\\\"|sort by t2_node,t1_callid|fields -_count,t2_node_id,t2_from_extension,t2_callHandlerID,t1_callid,t2_node,t2_Leg_type,t2_to,t2_direction,t2_SetupTimestamp,t2_ConnectedTimestamp,t2_DisconnectedTimestamp\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
-
-const query7 =
-"{ \"query\": \"(_sourceCategory=prod/css/calltrace \\\"referenceCallID\\\" or \\\"assigned to CallHandlerJSON\\\" or (\\\"play\\\" and \\\"OUTBOUND\\\")) or (_sourcecategory = \\\"prod/css/cdr\\\" )" +
+const query1 =
+"{ \"query\": \"" +
+"(_sourceCategory=prod/css/calltrace \\\"referenceCallID\\\" or \\\"assigned to CallHandlerJSON\\\" or (\\\"play\\\" and \\\"OUTBOUND\\\")) or (_sourcecategory = \\\"prod/css/cdr\\\" )" +
 "| if(_raw matches \\\"*referenceCallID*\\\", 2, if(_raw matches \\\"*play*\\\", 3, if(_raw matches \\\"CSS-1.2|*\\\",4,1))) as stream" +
 "| _messagetime as _timeslice" +
-"| parse \\\"|CallTrace*|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|TlcCall [ptr: *, call-ID: *] assigned to CallHandlerJSON [ptr: *, call-ID: *]\\\" as stam1,inbound,ptr1,sip_id,ptr2,uk1 nodrop" +
+"| parse \\\"|CallTrace*|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|TlcCall [ptr: *, call-ID: *] assigned to CallHandlerJSON [ptr: *, call-ID: *]\\\" as backslashT1,inbound,ptr1,sip_id,ptr2,uk1 nodrop" +
 "| where !(inbound matches \\\"*CLUSTER*\\\")" +
-"| parse \\\"|CallTrace*|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|Creating Call Handler. referenceCallID:[*] \\\" as stam2,outbound,inbound nodrop" +
+"| parse \\\"|CallTrace*|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|Creating Call Handler. referenceCallID:[*] \\\" as backslashT1,outbound,inbound nodrop" +
 "| parse \\\"|OUTBOUND|*|\\\" as outbound nodrop" +
 "| parse \\\"callmgrtag=*;\\\" as callmgrtag nodrop" +
 "| parse \\\"*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|*|\\\" as CssVersion,node_id,confid,inbound,RemoteEndpointID,Direction,ProtocolStack,CallSetupResult,TerminationReason,VerboseTerminationDetails,from_extension,CallerID,CallerIPandPort,CallerProductandVersion,CalledUserID,to,CalledIPandPort,CalledProductandVersion,SetupTimestamp,ConnectedTimestamp,DisconnectedTimestamp,ConnectionDuration,CallType,Encryption nodrop" +
@@ -30,7 +44,7 @@ const query7 =
 "|parse regex field=callerid \\\"sip:(?<test2>.*?)@\\\" nodrop" +
 "|if (isempty(test),test2,test) as test3" +
 "|if (isempty(from_extension),test3,from_extension) as from_extension" +
-"|count by _timeslice,inbound,outbound,sip_id,callmgrtag,stream,from_extension" +
+"|count by _timeslice,node_id,inbound,outbound,sip_id,callmgrtag,stream,from_extension" +
 "| join " +
 "( where stream=1) as t1, " +
 "( where stream=2) as t2, " +
@@ -38,12 +52,37 @@ const query7 =
 "( where stream=4) as t4 " +
 "on t2.inbound=t1.inbound and t3.outbound=t2.outbound and t4.inbound=t1.inbound" +
 "| formatDate(t1__timeslice, \\\"MM/dd/yyyy HH:mm:ss:SSS\\\") as messageDate" +
-"|t1_inbound as inbound|t1_sip_id as sip_id|t2_outbound as outbound|t3_callmgrtag as callmgrtag|t4_from_extension as from_extension" +
-"|count messageDate,from_extension,sip_id,inbound,outbound,callmgrtag" +
-"|fields -_count" +
+"| t1_inbound as inbound|t1_sip_id as sip_id|t2_outbound as outbound|t3_callmgrtag as callmgrtag|t4_from_extension as from_extension|t4_node_id as node_id" +
+"| count messageDate,node_id,from_extension,sip_id,inbound,outbound,callmgrtag" +
+"| fields -_count" +
 "| where from_extension=\\\"%s\\\"" +
 "\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
 
+const query2 =
+"{ \"query\": \"" +
+"(_sourceCategory=prod/css/calltrace \\\"From\\\" and \\\"callmgrtag=\\\" and \\\"1|INVITE|\\\") or (_sourceCategory=prod/css/calltrace  \\\"ptr:\\\" and \\\"assigned to CallHandlerJSON\\\") or (_sourceCategory=prod/css/calltrace  \\\"referenceCallID\\\" and \\\"_CLUSTER_LAN\\\")" +
+"| if(_raw matches \\\"*assigned to CallHandlerJSON*\\\", 2, if(_raw matches \\\"*referenceCallID*\\\", 3, 1)) as stream" +
+"| parse \\\"From: *;\\\" as from nodrop" +
+"| parse regex field=from \\\"<sip:(?<from_extension>.*?)@\\\" nodrop" +
+"| parse \\\"callmgrtag=*;\\\" as callmgrtag nodrop" +
+"| parse \\\"Call-ID: *\\\" as sip_id_next_test nodrop" +
+"| parse \\\"TlcCall [ptr: *, call-ID: *]\\\" as ptr1,sip_id_next nodrop" +
+"| parse \\\"|*|\\\" as node_id" +
+"| parse \\\"|CallTrace*|UNKNOWN|*|\\\" as stam1,inbound_proxy_callhandlerid nodrop" +
+"| parse \\\"|CallTrace*|UNKNOWN|*|UNKNOWN|UNKNOWN|Call_UNKNOWN|Creating Call Handler. referenceCallID:[*]\\\" as stam2,outbound_proxy_callhandlerid,inbound_proxy_callhandlerid nodrop" +
+"| parse regex field=sip_id_next_test \\\"(?<sip_id_next>.*?)\\n\\\" nodrop" +
+"| count by callmgrtag,node_id,sip_id_next,inbound_proxy_callhandlerid,outbound_proxy_callhandlerid,stream,from_extension" +
+"| join " +
+"( where stream=1) as t1, " +
+"( where stream=2) as t2, " +
+"( where stream=3) as t3 " +
+"on t2.sip_id_next=t1.sip_id_next and t3.inbound_proxy_callhandlerid=t2.inbound_proxy_callhandlerid" +
+"|t1_callmgrtag as callmgrtag|t1_sip_id_next as sip_id_next |t2_inbound_proxy_callhandlerid as inbound_proxy_callhandlerid|t3_outbound_proxy_callhandlerid as outbound_proxy_callhandlerid|t2_node_id as node_id|t1_from_extension as from_extension" +
+"|count from_extension,callmgrtag,node_id,sip_id_next,inbound_proxy_callhandlerid,outbound_proxy_callhandlerid" +
+"|where from_extension matches \\\"%s\\\"" +
+"|fields -_count" +
+// "|where callmgrtag matches \\\"T3NB_LEG_20180122093135434117\\\"" +
+"\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
 
 const queryStats1 =
 "{ \"query\": \"_sourceCategory=prod/css/callstats/*" +
@@ -57,6 +96,8 @@ const queryStats1 =
 
 var coo;
 var jobId;
+var resultsFromNode1saved;
+var callmgrtagMap = {};
 
 const fetchOptions = {
   // mode: 'cross-domain',
@@ -75,6 +116,21 @@ var sleep = (ms) => function() {
     setTimeout(resolve.bind(null, ...arguments), ms)
   );
 };
+
+function getNodeName(nodeId) {
+  var node = CSS_NODES[nodeId];
+  return node ? node.name : "Node Unknown";
+}
+
+function getNodeWan(nodeId) {
+  var node = CSS_NODES[nodeId];
+  return node ? node.wan : "Node Unknown";
+}
+
+function getNodeLan(nodeId) {
+  var node = CSS_NODES[nodeId];
+  return node ? node.lan : "Node Unknown";
+}
 
 function querySumo(query) {
   console.log('querySumo called with query:\n' + query);
@@ -121,9 +177,9 @@ async function querySumoStatus() {
   while (!done) {
     res = await fetch(url + jobId , fetchOptions)
     .then(r => r.json())
-    .then(sleep(500))
+    .then(sleep(2000))
     .then(json => {
-      console.log('Job ' + jobId +': ' + json.state + ' (messages: ' + json.messageCount + ')');
+      console.log('[' + new Date() + '] Job ' + jobId +': ' + json.state + ' (messages: ' + json.recordCount + ')');
       done = (json.state === "DONE GATHERING RESULTS");
     })
   }
@@ -135,19 +191,25 @@ router.use(bodyParser.json());
 router.post('/search', function(req, res, next) {
   console.log('/search called');
 
-  var ext = req.body.extension;
-  var from = req.body.from;
-  var to = req.body.to;
+  var ext =      req.body.extension;
+  var from =     req.body.from;
+  var to =       req.body.to;
   var timeZone = req.body.timeZone;
   console.log('Args: ' + ext + ' ' + from + ' ' + to + ' ' + timeZone);
 
-  sumoQuery = sprintf(query7, ext, from, to, timeZone);
-  querySumo(sumoQuery)
-  .then(json => {
-    console.log('result :' + JSON.stringify(json, null, 2));
-    var results = json.records.map(result => {
+  // from = '2018-01-22T09:30:00';
+  // to =   '2018-01-22T09:55:00';
+  // timeZone = 'CST';
+  querySumo(sprintf(query1, ext, from, to, timeZone))
+  .then(resultsFromNode1 => {
+    console.log('resultsFromNode1 :' + JSON.stringify(resultsFromNode1.records, null, 2));
+    var results = resultsFromNode1.records.map((result, i) => {
       return {
         node1: {
+          id: result.map.node_id,
+          name: getNodeName(result.map.node_id),
+          ipExt: getNodeWan(result.map.node_id),
+          ipInt: getNodeLan(result.map.node_id),
           ib: result.map.inbound,
           ob: result.map.outbound
         },
@@ -156,18 +218,56 @@ router.post('/search', function(req, res, next) {
         },
         caller: {
           extension: result.map.from_extension,
-          name: 'Moshe'
+          name: 'ABC'
         },
         callmgrtag: result.map.callmgrtag
       };
     });
-    return {
+
+    resultsFromNode1saved = {
       results: results,
-      success: json.success,
-      sumoJobId: json.sumoJobId
-    }
+      success: resultsFromNode1.success,
+      sumoJobId: resultsFromNode1.sumoJobId
+    };
   })
-  .then(json1 => res.send(json1));
+  .then(() => querySumo(sprintf(query2, ext, from, to, timeZone)))
+  .then(resultsFromNode2 => {
+    console.log('resultsFromNode2: ' + JSON.stringify(resultsFromNode2.records, null, 2));
+
+    // map each exisiting callmgrtag to its index:
+    resultsFromNode2.records.forEach((record, i) => {
+      var mgrTag = record.map.callmgrtag;
+      if (mgrTag !== undefined && mgrTag !== "") {
+        callmgrtagMap[mgrTag] = i;
+      }
+    });
+    console.log('callmgrtagMap: ' + JSON.stringify(callmgrtagMap, null, 2));
+
+    //
+    var resultsFinal = resultsFromNode1saved.results.map((result, j) => {
+      var i = callmgrtagMap[result.callmgrtag];
+      result.node2 = {};
+      result.link2 = {};
+      if (i !== undefined) {
+        console.log('Query1 result No.' + j + ' matched with query2 result No.' + i);
+        result.node2.id = resultsFromNode2.records[i].map.node_id;
+        result.node2.name = getNodeName(resultsFromNode2.records[i].map.node_id),
+        result.node2.ipExt = getNodeWan(resultsFromNode2.records[i].map.node_id),
+        result.node2.ipInt = getNodeLan(resultsFromNode2.records[i].map.node_id),
+        result.node2.ib = resultsFromNode2.records[i].map.inbound_proxy_callhandlerid;
+        result.node2.ob = resultsFromNode2.records[i].map.outbound_proxy_callhandlerid;
+        result.link2.callId = resultsFromNode2.records[i].map.sip_id_next;
+      }
+      return result;
+    });
+    console.log('resultsFinal: ' + JSON.stringify(resultsFinal, null, 2));
+    return {
+      results: resultsFinal,
+      success: resultsFromNode2.success,
+      sumoJobId: resultsFromNode2.sumoJobId
+    };
+  })
+  .then(json => res.send(json));
 });
 
 router.post('/stats', function(req, res, next) {
@@ -179,7 +279,7 @@ router.post('/stats', function(req, res, next) {
   var timeZone = 'CST';
   console.log('Args: ' + inboundLeg + ' ' + from + ' ' + to + ' ' + timeZone);
 
-  sumoQuery = sprintf(queryStats1, inboundLeg, from, to, timeZone);
+  var sumoQuery = sprintf(queryStats1, inboundLeg, from, to, timeZone);
   querySumo(sumoQuery)
   .then(json => res.send(json));
 });
