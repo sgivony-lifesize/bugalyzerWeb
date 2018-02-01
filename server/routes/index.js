@@ -29,7 +29,7 @@ const CSS_NODES = {
 
 const url = 'https://api.us2.sumologic.com/api/v1/search/jobs/';
 
-const query1 =
+const query1 = { name: "First node query", query:
 "{ \"query\": \"" +
 "(_sourceCategory=prod/css/calltrace \\\"referenceCallID\\\" or \\\"assigned to CallHandlerJSON\\\" or (\\\"play\\\" and \\\"OUTBOUND\\\")) or (_sourcecategory = \\\"prod/css/cdr\\\" )" +
 "| if(_raw matches \\\"*referenceCallID*\\\", 2, if(_raw matches \\\"*play*\\\", 3, if(_raw matches \\\"CSS-1.2|*\\\",4,1))) as stream" +
@@ -56,9 +56,10 @@ const query1 =
 "| count messageDate,node_id,from_extension,sip_id,inbound,outbound,callmgrtag" +
 "| fields -_count" +
 "| where from_extension=\\\"%s\\\"" +
-"\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
+"\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }"
+};
 
-const query2 =
+const query2 = { name: "Second node query", query:
 "{ \"query\": \"" +
 "(_sourceCategory=prod/css/calltrace \\\"From\\\" and \\\"callmgrtag=\\\" and \\\"1|INVITE|\\\") or (_sourceCategory=prod/css/calltrace  \\\"ptr:\\\" and \\\"assigned to CallHandlerJSON\\\") or (_sourceCategory=prod/css/calltrace  \\\"referenceCallID\\\" and \\\"_CLUSTER_LAN\\\")" +
 "| if(_raw matches \\\"*assigned to CallHandlerJSON*\\\", 2, if(_raw matches \\\"*referenceCallID*\\\", 3, 1)) as stream" +
@@ -82,16 +83,18 @@ const query2 =
 "|where from_extension matches \\\"%s\\\"" +
 "|fields -_count" +
 // "|where callmgrtag matches \\\"T3NB_LEG_20180122093135434117\\\"" +
-"\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
+"\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }"
+};
 
-const queryStats1 =
+const queryStats1 = { name: "Stats query", query:
 "{ \"query\": \"_sourceCategory=prod/css/callstats/*" +
 "|_messagetime as _timeslice" +
 "|where callid matches \\\"%s\\\"" +
 "|count by _timeslice,callid,atx_bw,atx_Packets,atx_PacketsLost,vtx_bw,vtx_Packets,vtx_PacketsLost,ptx_bw,ptx_Packets,ptx_PacketsLost,arx_bw,arx_packets,arx_packets_lost,vrx_bw,vrx_packets,vrx_packets_lost,prx_bw,prx_packets,prx_packets_lost" +
 "|atx_bw as audio_tx_bw|atx_Packets as audio_tx_packets|atx_PacketsLost as audio_tx_loss|arx_bw as audio_rx_bw|arx_packets as audio_rx_packets|arx_packets_lost as audio_rx_loss|vtx_bw as video_tx_bw|vtx_packets as video_tx_packets|vtx_PacketsLost as video_tx_loss|vrx_bw as video_rx_bw|vrx_packets as video_rx_packets|vrx_Packets_Lost as video_rx_loss|ptx_bw as presentation_tx_bw|ptx_Packets as presentation_tx_packets|ptx_PacketsLost as presentation_tx_loss|prx_bw as " + "presentation_rx_bw|prx_Packets as presentation_rx_packets|prx_Packets_Lost as presentation_rx_loss" +
 "|fields -_count,atx_bw,atx_Packets,atx_PacketsLost,vtx_bw,vtx_Packets,vtx_PacketsLost,ptx_bw,ptx_Packets,ptx_PacketsLost,arx_bw,arx_packets,arx_packets_lost,vrx_bw,vrx_packets,vrx_packets_lost,prx_bw,prx_packets,prx_packets_lost" +
-"|sort by _timeslice asc\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }";
+"|sort by _timeslice asc\", \"from\": \"%s\", \"to\": \"%s\", \"timeZone\": \"%s\" }"
+};
 
 
 var coo;
@@ -132,20 +135,18 @@ function getNodeLan(nodeId) {
   return node ? node.lan : "Node Unknown";
 }
 
-function querySumo(query) {
-  console.log('querySumo called with query:\n' + query);
+function querySumo(queryName, query) {
+  console.log('Calling Sumo with query: ' + queryName);
   fetchOptions.method = 'POST';
   fetchOptions.body = query;
   fetchOptions.headers.cookie = '';
   return fetch(url, fetchOptions)
   .then(r => {
-    //console.log('Result:    ' + JSON.stringify(r.headers, null, 2));
     coo = r.headers.getAll('set-cookie');
     return r.json();
   })
   .then(json => {
-    console.log(JSON.stringify(json, null, 2));
-    console.log('JOB ID:    ' + json.id);
+    console.log('JOB ID: ' + json.id);
     jobId = json.id;
     fetchOptions.method = 'GET';
     fetchOptions.body = query;
@@ -169,6 +170,61 @@ function querySumo(query) {
   })
 }
 
+function fillStats(stats, leg) {
+  leg.audio = {};
+  leg.audio.rx = {};
+  leg.audio.rx.bw = [];
+  leg.audio.rx.packets = [];
+  leg.audio.rx.loss = [];
+  leg.audio.tx = {};
+  leg.audio.tx.bw = [];
+  leg.audio.tx.packets = [];
+  leg.audio.tx.loss = [];
+  leg.video = {};
+  leg.video.rx = {};
+  leg.video.rx.bw = [];
+  leg.video.rx.packets = [];
+  leg.video.rx.loss = [];
+  leg.video.tx = {};
+  leg.video.tx.bw = [];
+  leg.video.tx.packets = [];
+  leg.video.tx.loss = [];
+  leg.presentation = {};
+  leg.presentation.rx = {};
+  leg.presentation.rx.bw = [];
+  leg.presentation.rx.packets = [];
+  leg.presentation.rx.loss = [];
+  leg.presentation.tx = {};
+  leg.presentation.tx.bw = [];
+  leg.presentation.tx.packets = [];
+  leg.presentation.tx.loss = [];
+  stats.records.forEach(entry => {
+    var map = entry.map;
+
+    leg.audio.rx.bw.push(map.audio_rx_bw);
+    leg.audio.rx.packets.push(map.audio_rx_packets);
+    leg.audio.rx.loss.push(map.audio_rx_loss);
+    leg.audio.tx.bw.push(map.audio_tx_bw);
+    leg.audio.tx.packets.push(map.audio_tx_packets);
+    leg.audio.tx.loss.push(map.audio_tx_loss);
+
+    leg.video.rx.bw.push(map.video_rx_bw);
+    leg.video.rx.packets.push(map.video_rx_packets);
+    leg.video.rx.loss.push(map.video_rx_loss);
+    leg.video.tx.bw.push(map.video_tx_bw);
+    leg.video.tx.packets.push(map.video_tx_packets);
+    leg.video.tx.loss.push(map.video_tx_loss);
+
+    leg.presentation.rx.bw.push(map.presentation_rx_bw);
+    leg.presentation.rx.packets.push(map.presentation_rx_packets);
+    leg.presentation.rx.loss.push(map.presentation_rx_loss);
+    leg.presentation.tx.bw.push(map.presentation_tx_bw);
+    leg.presentation.tx.packets.push(map.presentation_tx_packets);
+    leg.presentation.tx.loss.push(map.presentation_tx_loss);
+  })
+  return resultsFromNode1saved;
+}
+
 async function querySumoStatus() {
   fetchOptions.method = 'GET';
   fetchOptions.body = '';
@@ -179,7 +235,7 @@ async function querySumoStatus() {
     .then(r => r.json())
     .then(sleep(2000))
     .then(json => {
-      console.log('[' + new Date() + '] Job ' + jobId +': ' + json.state + ' (messages: ' + json.recordCount + ')');
+      console.log('[' + new Date() + '] Job ' + jobId +': ' + json.state + ' (records: ' + json.recordCount + ')');
       done = (json.state === "DONE GATHERING RESULTS");
     })
   }
@@ -197,10 +253,7 @@ router.post('/search', function(req, res, next) {
   var timeZone = req.body.timeZone;
   console.log('Args: ' + ext + ' ' + from + ' ' + to + ' ' + timeZone);
 
-  // from = '2018-01-22T09:30:00';
-  // to =   '2018-01-22T09:55:00';
-  // timeZone = 'CST';
-  querySumo(sprintf(query1, ext, from, to, timeZone))
+  querySumo(query1.name, sprintf(query1.query, ext, from, to, timeZone))
   .then(resultsFromNode1 => {
     console.log('resultsFromNode1 :' + JSON.stringify(resultsFromNode1.records, null, 2));
     var results = resultsFromNode1.records.map((result, i) => {
@@ -210,8 +263,8 @@ router.post('/search', function(req, res, next) {
           name: getNodeName(result.map.node_id),
           ipExt: getNodeWan(result.map.node_id),
           ipInt: getNodeLan(result.map.node_id),
-          ib: result.map.inbound,
-          ob: result.map.outbound
+          ib: { id: result.map.inbound },
+          ob: { id: result.map.outbound }
         },
         link1: {
           callId: result.map.sip_id
@@ -230,7 +283,7 @@ router.post('/search', function(req, res, next) {
       sumoJobId: resultsFromNode1.sumoJobId
     };
   })
-  .then(() => querySumo(sprintf(query2, ext, from, to, timeZone)))
+  .then(() => querySumo(query2.name, sprintf(query2.query, ext, from, to, timeZone)))
   .then(resultsFromNode2 => {
     console.log('resultsFromNode2: ' + JSON.stringify(resultsFromNode2.records, null, 2));
 
@@ -243,19 +296,21 @@ router.post('/search', function(req, res, next) {
     });
     console.log('callmgrtagMap: ' + JSON.stringify(callmgrtagMap, null, 2));
 
-    //
+    // matching entries from node1 results to entries from node2 results using callmgrtag:
     var resultsFinal = resultsFromNode1saved.results.map((result, j) => {
       var i = callmgrtagMap[result.callmgrtag];
       result.node2 = {};
+      result.node2.ib = {};
+      result.node2.ob = {};
       result.link2 = {};
       if (i !== undefined) {
         console.log('Query1 result No.' + j + ' matched with query2 result No.' + i);
         result.node2.id = resultsFromNode2.records[i].map.node_id;
-        result.node2.name = getNodeName(resultsFromNode2.records[i].map.node_id),
-        result.node2.ipExt = getNodeWan(resultsFromNode2.records[i].map.node_id),
-        result.node2.ipInt = getNodeLan(resultsFromNode2.records[i].map.node_id),
-        result.node2.ib = resultsFromNode2.records[i].map.inbound_proxy_callhandlerid;
-        result.node2.ob = resultsFromNode2.records[i].map.outbound_proxy_callhandlerid;
+        result.node2.name = getNodeName(resultsFromNode2.records[i].map.node_id);
+        result.node2.ipExt = getNodeWan(resultsFromNode2.records[i].map.node_id);
+        result.node2.ipInt = getNodeLan(resultsFromNode2.records[i].map.node_id);
+        result.node2.ib = { id: resultsFromNode2.records[i].map.inbound_proxy_callhandlerid };
+        result.node2.ob = { id: resultsFromNode2.records[i].map.outbound_proxy_callhandlerid };
         result.link2.callId = resultsFromNode2.records[i].map.sip_id_next;
       }
       return result;
@@ -273,15 +328,25 @@ router.post('/search', function(req, res, next) {
 router.post('/stats', function(req, res, next) {
   console.log('/stats called');
 
-  var inboundLeg = /*req.body.inboundLeg*/'SIP_WAN.hflr_20180116111348000_0679';
-  var from = '2018-01-01T11:00:00';
-  var to = '2018-01-16T12:00:00';
-  var timeZone = 'CST';
-  console.log('Args: ' + inboundLeg + ' ' + from + ' ' + to + ' ' + timeZone);
+  var leg       = req.body.callHandlerId;
+  var from      = req.body.from;
+  var to        = req.body.to;
+  var timeZone  = req.body.timeZone;
 
-  var sumoQuery = sprintf(queryStats1, inboundLeg, from, to, timeZone);
-  querySumo(sumoQuery)
-  .then(json => res.send(json));
+  console.log('Args: ' + leg + ' ' + from + ' ' + to + ' ' + timeZone);
+
+  var statsResult = {};
+  if (leg != undefined && leg !== "") {
+    statsResult[leg] = {};
+    querySumo(queryStats1.name, sprintf(queryStats1.query, leg, from, to, timeZone))
+    .then(stats => fillStats(stats, statsResult[leg]))
+    .then(() => res.send({ success: true, results: statsResult }))
+    .catch(err => {
+      console.log(err);
+      return res.send({ success: false, error: err });
+    });
+  }
 });
+
 
 module.exports = router;

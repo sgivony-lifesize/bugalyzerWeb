@@ -34,13 +34,13 @@ class App extends Component {
     })
     .then(res => res.json())
     .then(json => {
-      console.log("success: " + json.success);
+      console.log("query1 success: " + json.success);
       if (json.success) {
         console.log("results: " + json.results.length);
         console.log(json);
         var calls = [];
         json.results.forEach((result, i) => {
-          calls.push({ key: i, ib: result.node1.ib});
+          calls.push({ key: i, ib: result.node1.ib.id});
         })
         this.setState({
           json: json.results,
@@ -52,29 +52,65 @@ class App extends Component {
           error: true
         })
       }
-    });
+    })
+    .then(() => this.searchStats(userInput, this.state.json[0].node1.ib.id))
+    .then(legStats => {
+      var jsonTmp = this.state.json.slice();
+      jsonTmp[0].node1.ib.stats = legStats.results[this.state.json[0].node1.ib.id];
+      this.setState({ json: jsonTmp });
+      return legStats;
+    })
+    .then(() => this.searchStats(userInput, this.state.json[0].node1.ob.id))
+    .then(legStats => {
+      var jsonTmp = this.state.json.slice();
+      jsonTmp[0].node1.ob.stats = legStats.results[this.state.json[0].node1.ob.id];
+      this.setState({ json: jsonTmp });
+      return legStats;
+    })
+    .then(() => this.searchStats(userInput, this.state.json[0].node2.ib.id))
+    .then(legStats => {
+      var jsonTmp = this.state.json.slice();
+      jsonTmp[0].node2.ib.stats = legStats.results[this.state.json[0].node2.ib.id];
+      this.setState({ json: jsonTmp });
+      return legStats;
+    })
+    .then(() => this.searchStats(userInput, this.state.json[0].node2.ob.id))
+    .then(legStats => {
+      var jsonTmp = this.state.json.slice();
+      jsonTmp[0].node2.ob.stats = legStats.results[this.state.json[0].node2.ob.id];
+      this.setState({ json: jsonTmp });
+      return legStats;
+    })
+    .then(json => {
+      console.log(this.state.json);
+    })
   }
 
-  searchStats(userInput) {
-    fetch('/api/stats', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(userInput)
+  searchStats(userInput, leg) {
+    return new Promise(resolve => {
+      var userInput1 = userInput;
+      userInput1.callHandlerId = leg;
+      fetch('/api/stats', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userInput1)
+      })
+      .then(res => res.json())
+      .then(json => {
+        console.log("success: " + json.success);
+        if (json.success) {
+          console.log(json);
+          resolve(json);
+        } else {
+          this.setState({
+            error: true
+          })
+        }
+      })
     })
-    .then(res => res.json())
-    .then(json => {
-      console.log("success: " + json.success);
-      if (json.success) {
-        console.log(json);
-      } else {
-        this.setState({
-          error: true
-        })
-      }
-    });
   }
 
   handleStats(evt) {
@@ -137,9 +173,14 @@ class App extends Component {
         // to:        '2018-01-22T09:55:00',
         // timeZone:  'CST'
 
+        // extension: '6598550',
+        // from:      '2018-01-22T20:00:00',
+        // to:        '2018-01-22T21:00:00',
+        // timeZone:  'CST'
+
         extension: '6598550',
-        from:      '2018-01-22T20:00:00',
-        to:        '2018-01-22T21:00:00',
+        from:      '2018-01-25T09:00:00',
+        to:        '2018-01-25T10:00:00',
         timeZone:  'CST'
       });
     } else {
@@ -154,6 +195,7 @@ class App extends Component {
       return 'N/A';
     }
   }
+
   getValueLeg(prop, shortForm) {
     if (prop !== undefined && prop !== "") {
       return shortForm ? prop.substring(prop.length - 4) : prop;
@@ -161,6 +203,7 @@ class App extends Component {
       return 'N/A';
     }
   }
+
   getValueCallId(prop, shortForm) {
     if (prop !== undefined && prop !== "") {
       return shortForm ? prop.substring(0, 12) : prop;
@@ -168,6 +211,7 @@ class App extends Component {
       return 'N/A';
     }
   }
+
   onCallSelected() {
     var myselect = document.getElementById("callSelect");
     var map = this.state.json[myselect.selectedIndex-1];
@@ -192,10 +236,10 @@ class App extends Component {
         version: '--------------------------------',
         ipExt: this.getValue(map.node1.ipExt),
         ipInt: this.getValue(map.node1.ipInt),
-        ib: this.getValueLeg(map.node1.ib, true),
-        ibFull: this.getValueLeg(map.node1.ib, false),
-        ob: this.getValueLeg(map.node1.ob, true),
-        obFull: this.getValueLeg(map.node1.ob, false)
+        ib: this.getValueLeg(map.node1.ib.id, true),
+        ibFull: this.getValueLeg(map.node1.ib.id, false),
+        ob: this.getValueLeg(map.node1.ob.id, true),
+        obFull: this.getValueLeg(map.node1.ob.id, false)
       },
       link2: {
         divId: 2,
@@ -209,10 +253,10 @@ class App extends Component {
         version: '--------------------------------',
         ipExt: this.getValue(map.node2.ipExt),
         ipInt: this.getValue(map.node2.ipInt),
-        ib: this.getValueLeg(map.node2.ib, true),
-        ibFull: this.getValueLeg(map.node2.ib, false),
-        ob: this.getValueLeg(map.node2.ob, true),
-        obFull: this.getValueLeg(map.node2.ob, false)
+        ib: this.getValueLeg(map.node2.ib.id, true),
+        ibFull: this.getValueLeg(map.node2.ib.id, false),
+        ob: this.getValueLeg(map.node2.ob.id, true),
+        obFull: this.getValueLeg(map.node2.ob.id, false)
       },
       link3: {
         divId: 3,
@@ -261,8 +305,6 @@ class App extends Component {
           <button onClick={this.handleSearch}>Search</button>
           <br />
           <br />
-          <input ref="refInboundLeg" type="text" placeholder="Inbound Leg" />
-          <button onClick={this.handleStats}>Search</button>
         </div>
         <CallsChooser calls={this.state.calls} onCallSelected={this.onCallSelected}/>
         <div className="App">
